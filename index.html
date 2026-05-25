@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veo 3 Prompt Refiner — Creator Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0C0C0F;
+  --surface:#141418;
+  --surface2:#1C1C22;
+  --border:#2A2A35;
+  --border2:#353545;
+  --accent:#4F8EF7;
+  --accent-dim:rgba(79,142,247,0.12);
+  --text:#E8E8F0;
+  --text2:#9898B0;
+  --text3:#505068;
+  --gold:#D4A843;
+  --success:#3DBF7A;
+  --r:10px;--rs:7px;
+}
+body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+.app{max-width:720px;margin:0 auto;padding:2rem 1.5rem 5rem;}
+
+.header{text-align:center;margin-bottom:2.5rem;padding-top:1rem;}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent-dim);
+  border:1px solid rgba(79,142,247,0.25);
+  border-radius:20px;padding:4px 12px;
+  font-size:0.75rem;font-weight:500;color:var(--accent);
+  margin-bottom:1rem;letter-spacing:0.04em;
+}
+.header h1{font-size:1.9rem;font-weight:600;letter-spacing:-0.02em;line-height:1.2;margin-bottom:0.5rem;}
+.header h1 em{font-style:normal;color:var(--accent);}
+.header p{color:var(--text2);font-size:0.9rem;line-height:1.6;}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:1.4rem;
+  margin-bottom:1rem;
+  transition:border-color 0.2s;
+}
+.card:focus-within{border-color:var(--border2);}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.step-pill{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:20px;padding:3px 10px;
+  font-size:0.72rem;font-weight:600;color:var(--text3);
+  letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;
+}
+.step-pill.done{background:rgba(61,191,122,0.1);border-color:rgba(61,191,122,0.25);color:var(--success);}
+.card-title{font-size:0.95rem;font-weight:500;color:var(--text);}
+.card-sub{font-size:0.8rem;color:var(--text2);margin-left:auto;}
+
+textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);color:var(--text);
+  font-family:'Space Grotesk',sans-serif;font-size:0.92rem;
+  padding:0.8rem 1rem;resize:none;outline:none;
+  transition:border-color 0.2s;line-height:1.6;
+}
+textarea:focus{border-color:var(--accent);}
+textarea::placeholder{color:var(--text3);}
+.char-count{font-size:0.75rem;color:var(--text3);text-align:right;margin-top:4px;}
+
+.ratio-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rb{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:0.9rem 0.5rem;
+  cursor:pointer;text-align:center;transition:all 0.15s;
+  font-family:'Space Grotesk',sans-serif;
+}
+.rb:hover{border-color:var(--border2);}
+.rb.sel{border-color:var(--accent);background:var(--accent-dim);}
+.rb-ratio{font-size:1.1rem;font-weight:600;display:block;margin-bottom:4px;color:var(--text);}
+.rb.sel .rb-ratio{color:var(--accent);}
+.rb-name{font-size:0.75rem;color:var(--text3);display:block;}
+.rb.sel .rb-name{color:rgba(79,142,247,0.7);}
+
+.style-row{display:flex;gap:6px;flex-wrap:wrap;}
+.style-chip{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;padding:5px 12px;
+  font-size:0.78rem;font-weight:500;color:var(--text2);
+  cursor:pointer;transition:all 0.15s;
+  font-family:'Space Grotesk',sans-serif;
+}
+.style-chip:hover{border-color:var(--border2);color:var(--text);}
+.style-chip.on{background:rgba(212,168,67,0.1);border-color:rgba(212,168,67,0.3);color:var(--gold);}
+
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:0.95rem;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:var(--rs);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:0.95rem;font-weight:500;
+  cursor:pointer;transition:all 0.15s;outline:none;
+}
+.btn-primary:hover{background:#6FA3FF;}
+.btn-primary:disabled{background:var(--border);color:var(--text3);cursor:not-allowed;}
+
+.out-box{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:1.1rem;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.82rem;color:var(--text3);
+  line-height:1.75;min-height:160px;
+  white-space:pre-wrap;word-break:break-word;
+}
+.out-box.streaming{color:var(--text);border-color:var(--border2);}
+.out-box.done-state{color:var(--text);border-color:rgba(61,191,122,0.3);}
+.cursor-blink{
+  display:inline-block;width:2px;height:14px;
+  background:var(--accent);vertical-align:middle;
+  animation:blink 0.9s infinite;margin-left:2px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.progress-wrap{height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:0.85rem;display:none;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#6FA3FF);border-radius:2px;width:0%;transition:width 0.4s ease;}
+
+.breakdown{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  margin-top:0.85rem;
+}
+.bk-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:0.65rem 0.85rem;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.bk-icon{font-size:0.95rem;flex-shrink:0;margin-top:1px;}
+.bk-label{font-size:0.75rem;color:var(--text3);display:block;margin-bottom:2px;}
+.bk-val{font-size:0.82rem;color:var(--text2);line-height:1.4;}
+
+.divider{height:1px;background:var(--border);margin:0.85rem 0;}
+
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0.85rem;}
+.btn-ghost{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);border-radius:var(--rs);
+  padding:0.65rem;font-family:'Space Grotesk',sans-serif;
+  font-size:0.85rem;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all 0.15s;
+}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.btn-ghost.copied{background:rgba(61,191,122,0.08);border-color:rgba(61,191,122,0.3);color:var(--success);}
+
+.tip{
+  background:rgba(212,168,67,0.05);
+  border:1px solid rgba(212,168,67,0.15);
+  border-radius:var(--rs);padding:0.75rem 1rem;
+  font-size:0.8rem;color:rgba(212,168,67,0.75);
+  line-height:1.6;display:flex;gap:8px;align-items:flex-start;
+}
+
+.toast{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--rs);padding:0.55rem 1.1rem;
+  font-size:0.83rem;color:var(--text);
+  opacity:0;transition:opacity 0.25s;
+  pointer-events:none;z-index:999;white-space:nowrap;
+}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="badge">⚡ Powered by Claude Sonnet</div>
+    <h1>Veo 3 <em>Prompt Refiner</em></h1>
+    <p>Describe your video idea in plain English.<br>Get a production-ready Google Veo 3 prompt in seconds.</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card" id="c1">
+    <div class="row">
+      <span class="step-pill" id="p1">Step 1</span>
+      <span class="card-title">Your video idea</span>
+    </div>
+    <textarea id="idea" rows="4" placeholder="e.g. A street food vendor in Bangkok serves pad thai at night, neon signs everywhere, busy market crowd in the background..."></textarea>
+    <div class="char-count"><span id="cc">0</span> / 500</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card" id="c2">
+    <div class="row">
+      <span class="step-pill" id="p2">Step 2</span>
+      <span class="card-title">Format &amp; style</span>
+    </div>
+
+    <div style="font-size:0.78rem;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Aspect ratio</div>
+    <div class="ratio-row" style="margin-bottom:1rem;">
+      <button class="rb sel" onclick="setRatio(this,'16:9','YouTube / Widescreen')">
+        <span class="rb-ratio">16:9</span>
+        <span class="rb-name">YouTube · Cinema</span>
+      </button>
+      <button class="rb" onclick="setRatio(this,'9:16','TikTok / Reels / Shorts')">
+        <span class="rb-ratio">9:16</span>
+        <span class="rb-name">TikTok · Reels</span>
+      </button>
+      <button class="rb" onclick="setRatio(this,'1:1','Instagram Feed / Facebook')">
+        <span class="rb-ratio">1:1</span>
+        <span class="rb-name">Instagram · Feed</span>
+      </button>
+    </div>
+
+    <div style="font-size:0.78rem;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Visual style <span style="font-weight:400;">(pick any)</span></div>
+    <div class="style-row">
+      <button class="style-chip" onclick="toggleStyle(this)">Cinematic</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Photorealistic</button>
+      <button class="style-chip" onclick="toggleStyle(this)">UGC / Handheld</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Golden Hour</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Neon / Night</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Studio / Clean</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Documentary</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Slow Motion</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Aerial / Drone</button>
+      <button class="style-chip" onclick="toggleStyle(this)">Film Grain</button>
+    </div>
+  </div>
+
+  <!-- Step 3 Output -->
+  <div class="card" id="c3">
+    <div class="row">
+      <span class="step-pill" id="p3">Step 3</span>
+      <span class="card-title">Refined Veo 3 prompt</span>
+      <span class="card-sub" id="wordCount" style="display:none;"></span>
+    </div>
+
+    <div class="out-box" id="outBox">Your refined prompt will stream here — production-ready with camera angles, lighting, motion, audio cues, and visual style keywords all baked in.</div>
+
+    <div class="progress-wrap" id="prog"><div class="progress-fill" id="progFill"></div></div>
+
+    <div class="breakdown" id="breakdown" style="display:none;">
+      <div class="bk-item"><span class="bk-icon">🎥</span><div><span class="bk-label">Camera</span><span class="bk-val" id="bk-cam">—</span></div></div>
+      <div class="bk-item"><span class="bk-icon">💡</span><div><span class="bk-label">Lighting</span><span class="bk-val" id="bk-light">—</span></div></div>
+      <div class="bk-item"><span class="bk-icon">🎬</span><div><span class="bk-label">Motion</span><span class="bk-val" id="bk-motion">—</span></div></div>
+      <div class="bk-item"><span class="bk-icon">🔊</span><div><span class="bk-label">Audio</span><span class="bk-val" id="bk-audio">—</span></div></div>
+    </div>
+
+    <div class="action-row" id="actionRow" style="display:none;">
+      <button class="btn-ghost" id="copyBtn" onclick="copyOut()">📋 Copy prompt</button>
+      <button class="btn-ghost" onclick="resetAll()">🔄 Start over</button>
+    </div>
+
+    <div class="divider" id="div1" style="display:none;"></div>
+
+    <div class="tip" id="tip" style="display:none;">
+      <span>💡</span>
+      <span>Paste this prompt directly into <strong>Google Veo 3</strong>, <strong>Kling AI</strong>, <strong>Runway Gen-4</strong>, or <strong>Higgsfield</strong> — it works across all major AI video tools.</span>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="refineBtn" onclick="refine()">
+    ✨ Refine my prompt
+  </button>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let ratio = '16:9';
+let ratioContext = 'YouTube / Widescreen';
+let styles = [];
+let streaming = false;
+let fullOutput = '';
+
+document.getElementById('idea').addEventListener('input', function(){
+  const l = this.value.length;
+  document.getElementById('cc').textContent = l;
+  document.getElementById('cc').style.color = l > 450 ? '#E05454' : '';
+});
+
+function setRatio(btn, r, ctx) {
+  document.querySelectorAll('.rb').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  ratio = r; ratioContext = ctx;
+}
+
+function toggleStyle(btn) {
+  btn.classList.toggle('on');
+  styles = [...document.querySelectorAll('.style-chip.on')].map(b => b.textContent.trim());
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function resetAll() {
+  document.getElementById('idea').value = '';
+  document.getElementById('cc').textContent = '0';
+  document.getElementById('outBox').textContent = 'Your refined prompt will stream here — production-ready with camera angles, lighting, motion, audio cues, and visual style keywords all baked in.';
+  document.getElementById('outBox').className = 'out-box';
+  document.getElementById('breakdown').style.display = 'none';
+  document.getElementById('actionRow').style.display = 'none';
+  document.getElementById('div1').style.display = 'none';
+  document.getElementById('tip').style.display = 'none';
+  document.getElementById('wordCount').style.display = 'none';
+  document.getElementById('prog').style.display = 'none';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('p1').className = 'step-pill';
+  document.getElementById('p3').className = 'step-pill';
+  document.getElementById('refineBtn').disabled = false;
+  document.getElementById('refineBtn').innerHTML = '✨ Refine my prompt';
+  document.getElementById('copyBtn').className = 'btn-ghost';
+  fullOutput = '';
+  streaming = false;
+  document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('on'));
+  styles = [];
+}
+
+async function refine() {
+  const idea = document.getElementById('idea').value.trim();
+  if (!idea) { showToast('⚠ Enter your video idea first'); return; }
+  if (streaming) return;
+  streaming = true;
+
+  const btn = document.getElementById('refineBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;"></span> Refining...';
+
+  const outBox = document.getElementById('outBox');
+  outBox.className = 'out-box streaming';
+  outBox.textContent = '';
+  fullOutput = '';
+
+  document.getElementById('breakdown').style.display = 'none';
+  document.getElementById('actionRow').style.display = 'none';
+  document.getElementById('div1').style.display = 'none';
+  document.getElementById('tip').style.display = 'none';
+  document.getElementById('wordCount').style.display = 'none';
+
+  const prog = document.getElementById('prog');
+  const progFill = document.getElementById('progFill');
+  prog.style.display = 'block';
+  let pct = 0;
+  const ticker = setInterval(() => {
+    pct = Math.min(pct + 2, 90);
+    progFill.style.width = pct + '%';
+  }, 120);
+
+  const styleNote = styles.length > 0
+    ? `The user has selected these visual styles to emphasise: ${styles.join(', ')}.`
+    : 'No specific style selected — use your best judgement for the content type.';
+
+  const ratioGuide = {
+    '16:9': 'Wide horizontal frame. Use wide establishing shots, two-shots, landscape compositions, horizontal camera movements like dolly and tracking. Think cinematic widescreen.',
+    '9:16': 'Tall vertical frame for mobile. Use tight close-ups, POV shots, vertical motion (tilt up/down), centred subjects. Think TikTok and Reels — intimate and immediate.',
+    '1:1': 'Square frame. Keep subject centred, avoid extreme wide shots. Works well with medium shots and close-ups. Think Instagram feed content.'
+  };
+
+  const systemPrompt = `You are an expert AI video prompt engineer with deep knowledge of Google Veo 3, Kling AI, Runway, and Higgsfield video generation models. You specialise in writing prompts that produce cinematic, high-quality AI video output.
+
+Your job: transform a raw video idea into a single, dense, production-ready video generation prompt.
+
+## MANDATORY ELEMENTS — every prompt must include ALL of these:
+
+1. SUBJECT & ACTION — Who/what is in the frame and exactly what they are doing. Be specific. Not "a person walks" but "a young woman in a rust-coloured linen jacket strides confidently through a crowded street market."
+
+2. CAMERA WORK — Specify the exact shot type AND movement. Examples: "slow dolly push into a medium close-up", "handheld tracking shot following the subject from behind", "static wide shot with subtle rack focus", "low-angle crane shot rising to reveal the skyline", "POV shot through a car windscreen". Never just say "camera shot."
+
+3. LENS & DEPTH — Aperture feel and depth of field. Examples: "shallow depth of field, subject sharp, background bokeh", "wide angle lens with deep focus, every detail sharp", "anamorphic lens with characteristic horizontal lens flares."
+
+4. LIGHTING — Be precise. Not just "nice lighting" but: "warm tungsten practicals casting long shadows across the kitchen counter", "harsh midday sun creating strong overhead shadows, slightly overexposed highlights", "blue-hour natural light, no artificial fill, deep shadows", "three-point studio lighting, clean key light, gentle rim light separating subject from background."
+
+5. MOTION & PHYSICS — How things move in the scene. Clothes, hair, objects, environment. "Her scarf catches the wind and trails behind her", "steam rises from the cup in slow spirals", "camera shake mimics documentary handheld style", "slow motion at 120fps capturing water droplets mid-splash."
+
+6. AUDIO DESIGN — What Veo 3 should generate for sound. Be specific: "ambient city noise — distant traffic, muffled crowd chatter, a motorbike passing", "diegetic sound of coffee being poured, ceramic clinking, soft jazz from an unseen speaker", "clean dialogue capture, no music", "cinematic tension score — low strings, no percussion."
+
+7. COLOUR GRADE & VISUAL STYLE — The overall look. "Warm teal-and-orange Hollywood grade", "desaturated documentary style, slight green push in shadows", "bright and airy, lifted blacks, pastel tones", "neon-soaked cyberpunk — deep blacks, electric blues and magentas."
+
+8. ATMOSPHERE & TEXTURE — The feeling. "Humid summer evening, slight haze in the air", "sterile and cold, clinical white surfaces", "gritty and raw, film grain overlay."
+
+## ASPECT RATIO CONTEXT:
+Ratio selected: ${ratio} (${ratioContext})
+Framing guide: ${ratioGuide[ratio]}
+Tailor all camera and composition language to this ratio.
+
+## STYLE CONTEXT:
+${styleNote}
+
+## OUTPUT RULES — CRITICAL:
+- Write ONE flowing paragraph. No bullet points. No headers. No labels like "Camera:" or "Lighting:".
+- All elements must be woven together naturally into a single descriptive block.
+- Length: 120–180 words. Dense and specific. Every word earns its place.
+- No vague filler words: never use "beautiful", "amazing", "stunning", "wonderful", "incredible", "perfect". Replace with specific visual descriptions.
+- No meta-commentary. Do not say "this prompt" or "the video shows." Describe the scene directly.
+- End with 6–10 comma-separated technical style tags like: photorealistic, 4K, anamorphic, shallow DOF, film grain, Veo 3.
+- Output the prompt text only. Nothing else. No preamble, no explanation.`;
+
+  try {
+    const res = await fetch('/api/refine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        stream: true,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: `Video idea: "${idea}"` }]
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor-blink';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const d = JSON.parse(line.slice(6));
+            if (d.type === 'content_block_delta' && d.delta?.text) {
+              fullOutput += d.delta.text;
+              outBox.textContent = fullOutput;
+              outBox.appendChild(cursor);
+              outBox.scrollTop = outBox.scrollHeight;
+            }
+          } catch(e) {}
+        }
+      }
+    }
+
+    cursor.remove();
+    clearInterval(ticker);
+    progFill.style.width = '100%';
+    setTimeout(() => { prog.style.display = 'none'; }, 600);
+
+    if (fullOutput) {
+      outBox.className = 'out-box done-state';
+      document.getElementById('p1').className = 'step-pill done';
+      document.getElementById('p1').textContent = '✓ Step 1';
+      document.getElementById('p3').className = 'step-pill done';
+      document.getElementById('p3').textContent = '✓ Done';
+
+      const wc = fullOutput.trim().split(/\s+/).length;
+      const wEl = document.getElementById('wordCount');
+      wEl.textContent = wc + ' words';
+      wEl.style.display = 'block';
+
+      extractBreakdown(fullOutput);
+      document.getElementById('breakdown').style.display = 'grid';
+      document.getElementById('actionRow').style.display = 'grid';
+      document.getElementById('div1').style.display = 'block';
+      document.getElementById('tip').style.display = 'flex';
+
+      showToast('✓ Prompt ready — copy and use in Veo 3');
+    }
+
+  } catch(e) {
+    clearInterval(ticker);
+    outBox.className = 'out-box';
+    outBox.textContent = 'Connection error — please try again.';
+    showToast('⚠ Error — check your API key is set in Vercel');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✨ Refine again';
+  streaming = false;
+}
+
+function extractBreakdown(text) {
+  const t = text.toLowerCase();
+  const camWords = ['dolly','tracking','close-up','wide shot','pov','handheld','crane','aerial','static','tilt','pan','rack focus','medium shot'];
+  const lightWords = ['golden hour','neon','studio','backlit','rim light','natural light','tungsten','overexposed','blue-hour','harsh','soft','three-point','practicals'];
+  const motionWords = ['slow motion','120fps','fluid','handheld shake','drift','wind','steam','bokeh','shallow depth','anamorphic'];
+  const audioWords = ['ambient','diegetic','score','dialogue','silence','traffic','crowd','music','string','percussion','sound effect'];
+
+  function pick(words) {
+    return words.filter(w => t.includes(w)).slice(0,2).join(', ') || '—';
+  }
+  document.getElementById('bk-cam').textContent = pick(camWords);
+  document.getElementById('bk-light').textContent = pick(lightWords);
+  document.getElementById('bk-motion').textContent = pick(motionWords);
+  document.getElementById('bk-audio').textContent = pick(audioWords);
+}
+
+function copyOut() {
+  if (!fullOutput) return;
+  navigator.clipboard.writeText(fullOutput).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.className = 'btn-ghost copied';
+    btn.textContent = '✓ Copied!';
+    showToast('✓ Prompt copied to clipboard');
+    setTimeout(() => { btn.className = 'btn-ghost'; btn.innerHTML = '📋 Copy prompt'; }, 2000);
+  }).catch(() => showToast('⚠ Copy failed — select text manually'));
+}
+</script>
+</body>
+</html>
